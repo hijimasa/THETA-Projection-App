@@ -1,0 +1,5 @@
+# ninja log v5
+2	126	8048656455264220	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	5836939ad95ad677
+127	308	8048656456977290	C:/dev/THETA-Projection-App/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6w304u4r/obj/arm64-v8a/libswappywrapper.so	96b326627f5dd54b
+2	128	8048658601147059	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	5836939ad95ad677
+129	315	8048658602891679	C:/dev/THETA-Projection-App/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6w304u4r/obj/arm64-v8a/libswappywrapper.so	96b326627f5dd54b

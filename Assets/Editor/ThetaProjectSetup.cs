@@ -35,12 +35,14 @@ namespace ThetaProjection.EditorTools
             // --- Player 設定 ---
             // Quest (OpenXR) は Gamma 非対応。Linear は GLES3/Vulkan が必須
             PlayerSettings.colorSpace = ColorSpace.Linear;
+            // RTSP 再生 (SurfaceTexture の外部テクスチャ共有) は GLES 専用のため GLES3 のみにする
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
             PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[]
             {
-                UnityEngine.Rendering.GraphicsDeviceType.Vulkan,
                 UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3
             });
+            // Java 側 GL 呼び出しを Unity の GL コンテキストで行うため MT レンダリングは無効
+            PlayerSettings.SetMobileMTRendering(BuildTargetGroup.Android, false);
             PlayerSettings.productName = "THETA Live Viewer";
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.example.thetaliveviewer");
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
@@ -73,6 +75,7 @@ namespace ThetaProjection.EditorTools
 
             var viewer = new GameObject("THETA Viewer");
             viewer.AddComponent<ThetaLivePreview>();
+            viewer.AddComponent<RtspStreamPlayer>();
             viewer.AddComponent<ThetaViewerBootstrap>();
 
             if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
@@ -81,6 +84,52 @@ namespace ThetaProjection.EditorTools
 
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             Debug.Log($"[THETA Setup] シーンを作成しました: {ScenePath} (Build Settings にも登録済み)");
+        }
+
+        [MenuItem("THETA/3. Build APK")]
+        public static void BuildApk()
+        {
+            var options = new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = "Builds/ThetaLiveViewer.apk",
+                target = BuildTarget.Android,
+                options = BuildOptions.None,
+            };
+            var report = BuildPipeline.BuildPlayer(options);
+            Debug.Log($"[THETA Setup] Build result: {report.summary.result} " +
+                      $"(errors: {report.summary.totalErrors}, size: {report.summary.totalSize / (1024 * 1024)} MB)");
+            if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                throw new Exception($"APK build failed: {report.summary.totalErrors} error(s)");
+        }
+
+        /// <summary>
+        /// Norton 等の HTTPS 検査ソフトが入った PC 向けの回避策。
+        /// Norton のルート CA を cacerts に追加した JDK のコピー (C:\dev\UnityOpenJDK) を
+        /// Android ビルドの JDK として使わせる。該当 PC でのみ実行すればよい。
+        /// (Unity は Gradle 起動時に jvmargs や JAVA_TOOL_OPTIONS を上書きするため、
+        ///  truststore を差し替えるにはこの方法が確実)
+        /// </summary>
+        [MenuItem("THETA/4. Use Patched JDK (HTTPS inspection workaround)")]
+        public static void UsePatchedJdk()
+        {
+            // Unity 6 同梱の OpenJDK 17 のコピーに Norton のルート CA を追加したもの。
+            // Unity は Gradle 起動時に jvmargs / JAVA_TOOL_OPTIONS を上書きするため、
+            // truststore を差し替えるには cacerts へ直接追加した JDK を使うのが確実。
+            const string jdkPath = @"C:\dev\UnityOpenJDK17";
+            if (!System.IO.Directory.Exists(jdkPath))
+            {
+                Debug.LogError($"[THETA Setup] {jdkPath} がありません。README の手順で JDK のコピーと証明書追加を先に行ってください。");
+                return;
+            }
+            UnityEditor.Android.AndroidExternalToolsSettings.jdkRootPath = jdkPath;
+            Debug.Log($"[THETA Setup] Android ビルド用 JDK を {jdkPath} に変更しました。");
+
+            // SDK は Unity 6 同梱のもの (android-34+) をそのまま使う。
+            // 2022.3 時代に設定した C:\dev\UnityAndroidSDK (android-33 まで) が
+            // EditorPrefs に残っていると compileSdk 不足でビルドできないため明示的に戻す。
+            UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath = string.Empty;
+            Debug.Log("[THETA Setup] Android SDK を Unity 同梱のものに戻しました。");
         }
 
         /// <summary>Active Input Handling を "Both" にする(TextMesh 等の旧 API と Input System を併用)。</summary>

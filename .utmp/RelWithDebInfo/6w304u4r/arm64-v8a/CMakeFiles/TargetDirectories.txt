@@ -1,0 +1,5 @@
+C:/dev/THETA-Projection-App/.utmp/RelWithDebInfo/6w304u4r/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/dev/THETA-Projection-App/.utmp/RelWithDebInfo/6w304u4r/arm64-v8a/CMakeFiles/rebuild_cache.dir
+C:/dev/THETA-Projection-App/.utmp/RelWithDebInfo/6w304u4r/arm64-v8a/FramePacing/CMakeFiles/swappywrapper.dir
+C:/dev/THETA-Projection-App/.utmp/RelWithDebInfo/6w304u4r/arm64-v8a/FramePacing/CMakeFiles/edit_cache.dir
+C:/dev/THETA-Projection-App/.utmp/RelWithDebInfo/6w304u4r/arm64-v8a/FramePacing/CMakeFiles/rebuild_cache.dir

@@ -5,18 +5,30 @@ using UnityEngine.InputSystem.XR;
 namespace ThetaProjection
 {
     /// <summary>
-    /// シーンの配線役。カメラへの HMD トラッキング追加・投影球の生成・
-    /// ストリーマとの接続・ステータス表示をまとめて行う。
-    /// シーンには「Main Camera」と、このコンポーネント + ThetaLivePreview を
-    /// 付けた GameObject があればよい。
+    /// シーンの配線役。映像ソースの選択・カメラへの HMD トラッキング追加・
+    /// 投影球の生成・ステータス表示をまとめて行う。
+    /// シーンには「Main Camera」と、このコンポーネントを付けた GameObject があればよい
+    /// (ソースコンポーネントが無ければ自動で追加する)。
     /// </summary>
-    [RequireComponent(typeof(ThetaLivePreview))]
     public sealed class ThetaViewerBootstrap : MonoBehaviour
     {
+        public enum VideoSourceMode
+        {
+            /// <summary>実機では RTSP (高画質)、エディタでは Web API を使う</summary>
+            Auto,
+            /// <summary>Web API getLivePreview (MJPEG, 低画質・プラグイン不要)</summary>
+            WebApi,
+            /// <summary>RTSP プラグイン (H.264, 高画質・要 THETA RTSP Streaming プラグイン)</summary>
+            Rtsp,
+        }
+
+        [Header("映像ソース")]
+        public VideoSourceMode sourceMode = VideoSourceMode.Auto;
+
         [Tooltip("未指定ならシーン内から検索し、無ければ自動生成する")]
         public SphereProjector sphere;
 
-        private ThetaLivePreview _preview;
+        private ILiveVideoSource _source;
         private TextMesh _statusText;
         private Transform _cameraTransform;
 
@@ -26,8 +38,6 @@ namespace ThetaProjection
 
         private void Awake()
         {
-            _preview = GetComponent<ThetaLivePreview>();
-
             var cam = Camera.main;
             if (cam == null)
             {
@@ -45,13 +55,61 @@ namespace ThetaProjection
             EnsureHeadTracking(cam);
 
             if (sphere == null)
-                sphere = FindObjectOfType<SphereProjector>();
+                sphere = FindFirstObjectByType<SphereProjector>();
             if (sphere == null)
                 sphere = new GameObject("Projection Sphere").AddComponent<SphereProjector>();
 
-            _preview.TextureCreated += sphere.SetTexture;
+            _source = SelectSource();
+            _source.TextureCreated += sphere.SetTexture;
+
+            // 映像の左右向きはソース経路で異なる:
+            //   Web API (Texture2D.LoadImage) → 反転が必要
+            //   RTSP (SurfaceTexture 経由)    → そのままが正
+            sphere.SetFlipHorizontal(_source is ThetaLivePreview);
 
             CreateStatusText(cam.transform);
+        }
+
+        /// <summary>設定に応じて映像ソースを 1 つだけ有効にする。</summary>
+        private ILiveVideoSource SelectSource()
+        {
+            bool useRtsp;
+            switch (sourceMode)
+            {
+                case VideoSourceMode.WebApi:
+                    useRtsp = false;
+                    break;
+                case VideoSourceMode.Rtsp:
+                    useRtsp = true;
+                    break;
+                default: // Auto
+#if UNITY_ANDROID && !UNITY_EDITOR
+                    useRtsp = true;
+#else
+                    useRtsp = false;
+#endif
+                    break;
+            }
+
+            var webApi = GetComponent<ThetaLivePreview>();
+            var rtsp = GetComponent<RtspStreamPlayer>();
+
+            if (useRtsp)
+            {
+                if (webApi != null)
+                    webApi.enabled = false;
+                if (rtsp == null)
+                    rtsp = gameObject.AddComponent<RtspStreamPlayer>();
+                rtsp.enabled = true;
+                return rtsp;
+            }
+
+            if (rtsp != null)
+                rtsp.enabled = false;
+            if (webApi == null)
+                webApi = gameObject.AddComponent<ThetaLivePreview>();
+            webApi.enabled = true;
+            return webApi;
         }
 
         /// <summary>HMD の姿勢をカメラに反映する TrackedPoseDriver を追加する。</summary>
@@ -86,15 +144,15 @@ namespace ThetaProjection
 
         private void Update()
         {
-            if (_preview.IsStreaming)
+            if (_source.IsStreaming)
             {
                 // 接続確立後はフレームレートだけ小さく出す(消したければ非表示に変更)
-                _statusText.text = $"{_preview.FramesPerSecond} fps";
+                _statusText.text = $"{_source.FramesPerSecond} fps";
                 _statusText.color = new Color(1f, 1f, 1f, 0.25f);
             }
             else
             {
-                _statusText.text = _preview.StatusText +
+                _statusText.text = _source.StatusText +
                     "\n\nConnect Quest Wi-Fi to THETA (THETAYL*.OSC)";
                 _statusText.color = Color.white;
             }

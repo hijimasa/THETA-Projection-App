@@ -60,6 +60,14 @@ namespace ThetaProjection
                 _material.mainTexture = texture;
         }
 
+        /// <summary>実行時に左右反転を切り替える(映像ソースにより向きが異なるため)。</summary>
+        public void SetFlipHorizontal(bool flip)
+        {
+            flipHorizontal = flip;
+            if (_material != null)
+                _material.SetFloat("_FlipU", flip ? 1f : 0f);
+        }
+
         /// <summary>
         /// 内側から見るための球メッシュを生成する。
         /// v=1 が天頂、v=0 が天底。u は経度方向(継ぎ目は lon=0)。

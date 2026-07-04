@@ -11,7 +11,7 @@ namespace ThetaProjection
     /// 最新フレームを Texture2D としてメインスレッドに公開するコンポーネント。
     /// 切断時は自動で再接続する。
     /// </summary>
-    public sealed class ThetaLivePreview : MonoBehaviour
+    public sealed class ThetaLivePreview : MonoBehaviour, ILiveVideoSource
     {
         [Header("THETA 接続設定")]
         [Tooltip("AP モードの THETA は 192.168.1.1 固定")]
@@ -29,7 +29,7 @@ namespace ThetaProjection
         public Texture2D Texture { get; private set; }
 
         /// <summary>テクスチャが生成されたときに一度呼ばれる(マテリアルへの割り当て用)。</summary>
-        public event Action<Texture2D> TextureCreated;
+        public event Action<Texture> TextureCreated;
 
         /// <summary>現在の接続状態(表示用・英語)。ワーカースレッドから更新される。</summary>
         public string StatusText => _status;
