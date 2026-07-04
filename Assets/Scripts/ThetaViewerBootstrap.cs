@@ -146,9 +146,8 @@ namespace ThetaProjection
         {
             if (_source.IsStreaming)
             {
-                // 接続確立後はフレームレートだけ小さく出す(消したければ非表示に変更)
-                _statusText.text = $"{_source.FramesPerSecond} fps";
-                _statusText.color = new Color(1f, 1f, 1f, 0.25f);
+                // 配信中は何も表示しない (接続状態の表示は切断時のみ)
+                _statusText.text = string.Empty;
             }
             else
             {
