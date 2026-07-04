@@ -1,6 +1,9 @@
 # Unity generated folders
 /[Ll]ibrary/
 /[Tt]emp/
+/.utmp/
+*.gradle.backup
+*.gradle.backup.meta
 /[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
