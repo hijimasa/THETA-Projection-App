@@ -21,7 +21,7 @@ RICOH THETA V のライブ映像を Wi-Fi 経由で Meta Quest 3 に全天球表
 | 項目 | 内容 |
 |---|---|
 | Unity | 6000.3.19f1 (Unity 6.3 LTS) + **Android Build Support (SDK/NDK/OpenJDK 込み)** |
-| ヘッドセット | Meta Quest 3 (開発者モード有効化済み、USB でビルド転送) |
+| ヘッドセット | Meta Quest 3 / Quest 2 (開発者モード有効化済み、USB でビルド転送) |
 | カメラ | RICOH THETA V (ファームウェア v3.00.1 以降) |
 
 ## セットアップ手順
@@ -66,6 +66,36 @@ Unity 6 は android-34+ 同梱のため不要になった)
 動作確認は PC を THETA の Wi-Fi につないで VLC で
 `rtsp://192.168.1.1:8554/live?resolution=1920x960` を開くのが手軽です。
 
+## ビルド済み APK のインストール (GitHub Release)
+
+Unity でビルドせずに使う場合は、[GitHub Release](../../releases) で配布している `.apk` を
+Quest にサイドロードでインストールできます。**Quest 3 / Quest 2 のどちらでも同じ手順**です。
+(高画質 RTSP を使うには、別途 [セットアップ手順 2.](#2-theta-v-に-rtsp-プラグインを導入高画質に必須) の THETA プラグイン導入が必要です)
+
+参考: [Meta Quest に apk ファイルをインストールする方法(Meta Quest Developer Hub) — Qiita](https://qiita.com/mofurune/items/34601bcff58e491d8d55)
+
+### 1. 開発者モードを有効化 (初回のみ)
+
+スマホの **Meta Horizon アプリ**から:
+
+1. ユーザーアイコン → メニュー(≡) → **Devices**
+2. 対象のヘッドセットを選択 → **Headset settings** → **Developer Mode**
+3. **Developer Mode** のトグルをオン(Bluetooth / 位置情報の有効化を求められたら許可)
+
+### 2. Meta Quest Developer Hub で APK を転送
+
+1. [GitHub Release](../../releases) から最新の `.apk` をダウンロード
+2. [Meta Quest Developer Hub](https://developers.meta.com/horizon/documentation/android-apps/meta-quest-developer-hub/) (Windows / macOS) をインストールして起動
+3. Quest を USB で PC に接続し、ヘッドセット内の **「USB デバッグを許可しますか?」→ 許可**
+4. MQDH の **Device Manager** を開き、ダウンロードした `.apk` を右側のエリアへ **ドラッグ&ドロップ**
+5. **Installation complete** の表示を確認
+
+> adb が使える環境なら `adb install -r THETA-Projection.apk` でも同じことができます。
+
+### 3. アプリを起動
+
+Quest のライブラリで **すべて → 提供元不明** を開くと「THETA Live Viewer」が表示されます。ここから起動してください。
+
 ## 使い方
 
 1. THETA V を AP モードにし、RTSP プラグインを起動(モードボタン長押し)
@@ -87,7 +117,7 @@ Game ビュー内を右ドラッグで見回せます。
 - **ThetaViewerBootstrap**
   - `Source Mode`: `Auto`(実機=RTSP / エディタ=WebApi)、`WebApi`、`Rtsp`
 - **RtspStreamPlayer**
-  - `Url`: `rtsp://192.168.1.1:8554/live?resolution=1920x960`(`3840x1920` も指定可、帯域次第)
+  - `Url`: `rtsp://192.168.1.1:8554/live?resolution=1920x960`(`3840x1920` も指定可、帯域次第。**Quest 2 は 1920x960 まで推奨**)
   - `Texture Width/Height`: URL の resolution と合わせる
 - **ThetaLivePreview**(Web API 用)
   - `Preview Width/Height/Framerate`: `1024x512@30`(既定) / `1920x960@8` / `640x320@30`
@@ -103,6 +133,7 @@ Game ビュー内を右ドラッグで見回せます。
 - **発熱**: RTSP プラグインでの長時間連続配信は 30 分程度で熱停止する報告があります。給電・送風か解像度を下げて運用してください。
 - **クライアントモード(CL)非対応**: AP モード接続のみ対応です。
 - **4K (3840x1920)**: プラグイン公式の注記どおり帯域次第で不安定です。まず 1920x960 で確認を。
+- **Quest 2 での解像度**: Quest 2 (Snapdragon XR2 Gen1) はデコード・放熱の余力が小さいため **1920x960 まで**を推奨します。3840x1920 は HW デコードが追いつかず SW デコードへフォールバックし、フレーム落ち・発熱の原因になります。
 
 ## トラブルシューティング
 
